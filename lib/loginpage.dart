@@ -1,11 +1,14 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_appauth/flutter_appauth.dart';
-
-import 'package:firebase_core/firebase_core.dart';
+import 'package:auth_buttons/auth_buttons.dart';
+// import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
+// import 'package:firebase_core/firebase_core.dart';
 import 'package:http/http.dart' as http;
+import 'package:socialmedialogin/welcomepage.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -35,90 +38,14 @@ class _LoginPageState extends State<LoginPage> {
     return userCredential.user;
   }
 
-  //   // // Microsoft Sign-In
-  //   // Future<User?> _signInWithMicrosoft() async {
-  //   //   // Microsoft OAuth 2.0 login
-  //   //   final result = await FlutterMicrosoftAuthentication.login(
-  //   //     clientId: "YOUR_MICROSOFT_CLIENT_ID", // Your Microsoft client ID from Azure portal
-  //   //     scopes: ["User.Read"],
-  //   //   );
-
-  //   //   if (result != null && result.accessToken != null) {
-  //   //     final OAuthCredential microsoftAuthCredential = OAuthProvider("microsoft.com").credential(
-  //   //       accessToken: result.accessToken,
-  //   //     );
-  //   //     final UserCredential userCredential = await _auth.signInWithCredential(microsoftAuthCredential);
-  //   //     return userCredential.user;
-  //   //   }
-  //   //   return null;
-  //   // }
-
-  //   // Microsoft OAuth Sign-In
-  //   Future<User?> _signInWithMicrosoft() async {
-  //     // Replace these with your Azure AD app's details
-  //     const clientId =
-  //         'ae504adf-7d2a-49eb-a7cd-06e94408b540'; // Your Microsoft Application (client) ID
-  //     const tenantId =
-  //         '7538b3a0-7ec7-4a03-82c7-b91e45e7e293'; // Your Directory (tenant) ID
-  //     const redirectUri =
-  //         'https://socialmedialogin-964d8.firebaseapp.com/__/auth/handler'; // You can use 'https://login.microsoftonline.com/common/oauth2/nativeclient'
-  //     const scope = 'user.read'; // Add any other required scopes
-
-  //     // Construct the authorization URL
-  //     final authUrl =
-  //         'https://login.microsoftonline.com/$tenantId/oauth2/v2.0/authorize?client_id=$clientId&response_type=code&redirect_uri=$redirectUri&response_mode=query&scope=$scope&state=12345';
-
-  //     // Trigger the WebAuth flow
-  //     final result = await FlutterWebAuth.authenticate(
-  //       url: authUrl,
-  //       callbackUrlScheme:
-  //           'https://socialmedialogin-964d8.firebaseapp.com/__/auth/handler', // Example: com.myapp
-  //     );
-
-  //     // Extract the authorization code from the result
-  //     final code = Uri.parse(result).queryParameters['code'];
-
-  //     if (code != null) {
-  //       // Exchange the authorization code for an access token
-  //       final tokenUrl =
-  //           'https://login.microsoftonline.com/$tenantId/oauth2/v2.0/token';
-  //       final response = await http.post(
-  //         Uri.parse(tokenUrl),
-  //         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-  //         body: {
-  //           'client_id': clientId,
-  //           'scope': scope,
-  //           'code': code,
-  //           'redirect_uri': redirectUri,
-  //           'grant_type': 'authorization_code',
-  //         },
-  //       );
-
-  //       // Parse the response to get the access token
-  //       final responseBody = jsonDecode(response.body);
-  //       final accessToken = responseBody['access_token'];
-
-  //       if (accessToken != null) {
-  //         // Sign in with Firebase using the obtained access token
-  //         final OAuthCredential microsoftCredential = OAuthProvider(
-  //           "microsoft.com",
-  //         ).credential(accessToken: accessToken);
-  //         final UserCredential userCredential = await _auth.signInWithCredential(
-  //           microsoftCredential,
-  //         );
-  //         return userCredential.user;
-  //       }
-  //     }
-  //     return null;
-  //   }
-
   final FlutterAppAuth appAuth = FlutterAppAuth();
 
-  Future<User?> signInWithMicrosoft() async {
+  Future<Map<String, dynamic>?> signInWithMicrosoft() async {
     try {
-     
-      const String clientId = 'ae504adf-7d2a-49eb-a7cd-06e94408b540';
-      const String redirectUrl = 'com.example.socialmedialogin://auth';
+      const String clientId =
+          'ae504adf-7d2a-49eb-a7cd-06e94408b540'; // Replace with your actual client ID
+      const String redirectUrl =
+          'com.example.socialmedialogin://auth'; // Must match AndroidManifest and Azure
       const List<String> scopes = [
         'openid',
         'email',
@@ -132,30 +59,41 @@ class _LoginPageState extends State<LoginPage> {
           clientId,
           redirectUrl,
           discoveryUrl:
-              'https://login.microsoftonline.com/common/v2.0/.well-known/openid-configuration',
+              'https://login.microsoftonline.com/7538b3a0-7ec7-4a03-82c7-b91e45e7e293/v2.0/.well-known/openid-configuration',
           scopes: scopes,
-          promptValues: ['login'], // optional: force login prompt
+          promptValues: ['login'], // Optional
+          preferEphemeralSession: true, // Optional: avoids previous cache
         ),
       );
-      print("Microsoft sign-in result: $result");
 
-      if (result != null) {
-        final OAuthCredential credential = OAuthProvider(
-          "microsoft.com",
-        ).credential(idToken: result.idToken, accessToken: result.accessToken);
+ 
 
-        // 🔐 Sign in with Firebase
-        final userCredential = await FirebaseAuth.instance.signInWithCredential(
-          credential,
-        );
-
-        print("Signed in as: ${userCredential.user?.email}");
-        return userCredential.user;
+      if (result == null) {
+        print('❌ Authorization failed or cancelled');
+        return null;
       }
-      return null;
+      print("✅ Authorization successful");
+
+   
+
+      return {'accessToken': result.accessToken};
     } catch (e) {
-      print('Microsoft sign-in error: $e');
+      print('❌ Microsoft sign-in error: $e');
+    
       return null;
+    }
+  }
+
+  Future<Map<String, dynamic>> getMicrosoftUserInfo(String accessToken) async {
+    final response = await http.get(
+      Uri.parse('https://graph.microsoft.com/v1.0/me'),
+      headers: {'Authorization': 'Bearer $accessToken'},
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Failed to fetch Microsoft user profile');
     }
   }
 
@@ -183,48 +121,150 @@ class _LoginPageState extends State<LoginPage> {
   //     return null;
   //   }
 
-  //   // Sign-Out
-  Future<void> _signOut() async {
-    await _auth.signOut();
-    await GoogleSignIn().signOut();
+  // Future<UserCredential> signInWithFacebook() async {
+  //   final LoginResult result = await FacebookAuth.i.login();
+  //   final credential = FacebookAuthProvider.credential(
+  //     result.accessToken!.token,
+  //   );
+  //   return await FirebaseAuth.instance.signInWithCredential(credential);
+  // }
+
+  Future<void> signInWithFacebook() async {
+    try {
+      
+
+      final LoginResult result = await FacebookAuth.instance.login(
+        loginBehavior: LoginBehavior.webOnly, // Forces web-based login dialog
+        permissions: [
+          'public_profile',
+          'email',
+        ], // Explicitly request these permissions
+      );
+
+      if (result.status != LoginStatus.success) {
+        print('❌ Facebook login failed: ${result.message}');
+        return null;
+      }
+
+      final fbUserData = await FacebookAuth.instance.getUserData(
+        fields: "name,email,picture.width(200)",
+      );
+
+      if (fbUserData['name'] == null || fbUserData['email'] == null) {
+        throw Exception('Incomplete user data received');
+      }
+
+      // 6. Create UserData object
+      final userData = UserData(
+        name: fbUserData['name'],
+        email: fbUserData['email'],
+        provider: 'Facebook',
+      );
+
+      print('✅ Facebook Name: ${userData.name}');
+      print('📧 Facebook Email: ${userData.email}');
+
+      // 7. Navigate to WelcomePage
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => WelcomePage(user: userData)),
+      );
+
+      // final OAuthCredential credential = FacebookAuthProvider.credential(
+      //   result.accessToken!.token,
+      // );
+
+      // 5. Sign in to Firebase
+      // final UserCredential userCredential = await FirebaseAuth.instance
+      //     .signInWithCredential(credential);
+      // print('✅ Firebase user signed in: ${userCredential.user?.displayName}');
+      // // 6. Return the Firebase user
+      // // return userCredential.user;
+    } catch (e) {
+      print('🔥 Facebook login error: $e');
+      return null;
+    }
   }
+
+  //   // Sign-Out
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('Login Page')),
       body: Center(
-        child: Column(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            ElevatedButton(
+          spacing: 20,
+          children: [
+            GoogleAuthButton(
               onPressed: () async {
                 User? user = await _signInWithGoogle();
+
                 if (user != null) {
-                  print('Logged in as ${user.displayName}');
+                  // Create UserData object
+                  final userData = UserData(
+                    name: user.displayName,
+                    email: user.email,
+                    provider: 'Google',
+                  );
+
+                  print('✅ Google Name: ${userData.name}');
+                  print('📧 Google Email: ${userData.email}');
+
+                  // Navigate to WelcomePage
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => WelcomePage(user: userData),
+                    ),
+                  );
                 }
+                
               },
-              child: Text('Login with Google'),
+              style:
+                AuthButtonStyle(buttonType: AuthButtonType.icon)
+            
             ),
-            ElevatedButton(
+            MicrosoftAuthButton(
               onPressed: () async {
-                User? user = await signInWithMicrosoft();
-                if (user != null) {
-                  print('Logged in as ${user.displayName}');
+                final result = await signInWithMicrosoft();
+                if (result != null) {
+                  final userInfo = await getMicrosoftUserInfo(
+                    result['accessToken']!,
+                  );
+
+                  // Create UserData object
+                  final userData = UserData(
+                    name: userInfo['displayName'],
+                    email: userInfo['mail'] ?? userInfo['userPrincipalName'],
+                    provider: 'Microsoft',
+                  );
+
+                  print('✅ Microsoft Name: ${userData.name}');
+                  print('📧 Microsoft Email: ${userData.email}');
+
+                  // Navigate to WelcomePage
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => WelcomePage(user: userData),
+                    ),
+                  );
                 }
               },
-              child: Text('Login with Microsoft'),
+               style:
+                AuthButtonStyle(buttonType: AuthButtonType.icon)
             ),
-            //             ElevatedButton(
-            //               onPressed: () async {
-            //                 User? user = await _signInWithTwitter();
-            //                 if (user != null) {
-            //                   print('Logged in as ${user.displayName}');
-            //                 }
-            //               },
-            //               child: Text('Login with Twitter'),
-            //             ),
-            ElevatedButton(onPressed: _signOut, child: Text('Sign out')),
+
+            FacebookAuthButton(
+              onPressed: () async {
+                await signInWithFacebook();
+              },
+               style:
+                AuthButtonStyle(buttonType: AuthButtonType.icon)
+            ),
           ],
         ),
       ),

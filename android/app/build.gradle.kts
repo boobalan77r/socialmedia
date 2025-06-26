@@ -9,6 +9,8 @@ plugins {
 }
 
 android {
+    
+     
     namespace = "com.example.socialmedialogin"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = "27.0.12077973"
@@ -34,6 +36,9 @@ android {
 
          manifestPlaceholders["appAuthRedirectScheme"] = "com.example.socialmedialogin"
     }
+    
+         
+
 
     buildTypes {
         release {
